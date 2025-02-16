@@ -1,7 +1,343 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Plus, Search,  ChevronLeft, ChevronRight, Bell, History } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar } from "@/components/ui/avatar";
+import { toast } from 'react-hot-toast';
+
+const ITEMS_PER_PAGE = 5;
+
+// Custom sort function for dates
+const sortByDate = (a, b, order) => {
+  const dateA = new Date(a.createdAt);
+  const dateB = new Date(b.createdAt);
+  return order === 'asc' ? dateA - dateB : dateB - dateA;
+};
 
 export const Patients = () => {
+ const [patients, setPatients] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [timeFilter, setTimeFilter] = useState('all');
+  const [sortField, setSortField] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+
+const fetchPatients = useCallback(async () => {
+    try {
+      const response = await fetch('https://clinic-backend-f42a.onrender.com/patients',{
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch patients');
+      const data = await response.json();
+      setPatients(data);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+const filteredPatients = useMemo(() => {
+    return patients.filter(patient =>
+      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.phone.includes(searchTerm) ||
+      patient.location?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [patients, searchTerm]);
+
+  // Updated sort function
+  const sortedPatients = useMemo(() => {
+    return [...filteredPatients].sort((a, b) => {
+      if (sortField === 'createdAt') {
+        return sortByDate(a, b, sortOrder);
+      }
+      
+      const valueA = String(a[sortField]).toLowerCase();
+      const valueB = String(b[sortField]).toLowerCase();
+      
+      if (sortOrder === 'asc') {
+        return valueA.localeCompare(valueB);
+      }
+      return valueB.localeCompare(valueA);
+    });
+  }, [filteredPatients, sortField, sortOrder]);
+
+  const totalPages = Math.ceil(sortedPatients.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedPatients = sortedPatients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Handle sorting
+  const handleSort = useCallback((field) => {
+    if (field === sortField) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  }, [sortField, sortOrder]);
+
+  // Handle page change
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page);
+  }, []);
+
   return (
-    <div className='bg-white text-black'>Patients </div>
-  )
-}
+    <div className="p-6 flex-1 bg-gray-50 min-h-screen">
+      <div className="max-w-[1600px] mx-auto">
+        {/* Header Section */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Patient Management</h1>
+            <div className="text-sm text-gray-500 mt-1">Dashboard / Patients</div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search patients..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-[300px] border-gray-200"
+              />
+            </div>
+            <Button variant="ghost" size="icon">
+              <Bell className="w-5 h-5 text-gray-500" />
+            </Button>
+            <Avatar className="h-8 w-8 bg-blue-100">
+              <span className="text-blue-600">JD</span>
+            </Avatar>
+          </div>
+        </div>
+
+        {/* Filters Section */}
+        <div className="mb-6 flex items-center gap-4">
+         
+          <div className="ml-auto">
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Patient
+            </Button>
+          </div>
+        </div>
+
+    <PatientTable
+      patients={paginatedPatients}
+      sortField={sortField}
+      sortOrder={sortOrder}
+      onSort={handleSort}
+    />
+     <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </div>
+
+      {/* Add Patient Modal */}
+      {showAddModal && (
+        <AddPatientModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={(newPatient) => {
+            setPatients((prev) => [...prev, newPatient]);
+            setShowAddModal(false);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Updated Patient Table Component
+const PatientTable = ({ patients, sortField, sortOrder, onSort }) => {
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return '↕';
+    return sortOrder === 'asc' ? '↑' : '↓';
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="text-left border-b border-gray-200">
+              <th className="px-6 py-4 text-sm font-medium text-gray-500 cursor-pointer" onClick={() => onSort('name')}>
+                Patient Name {renderSortIcon('name')}
+              </th>
+              <th className="px-6 py-4 text-sm font-medium text-gray-500 cursor-pointer" onClick={() => onSort('location')}>
+                Location {renderSortIcon('location')}
+              </th>
+              <th className="px-6 py-4 text-sm font-medium text-gray-500 cursor-pointer" onClick={() => onSort('phone')}>
+                Contact {renderSortIcon('phone')}
+              </th>
+              <th className="px-6 py-4 text-sm font-medium text-gray-500">Medical History</th>
+              <th className="px-6 py-4 text-sm font-medium text-gray-500 cursor-pointer" onClick={() => onSort('createdAt')}>
+                Created Date {renderSortIcon('createdAt')}
+              </th>
+              <th className="px-6 py-4 text-sm font-medium text-gray-500">Status</th>
+              
+            </tr>
+          </thead>
+          <tbody>
+            {patients.map((patient) => (
+              <tr key={patient._id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="px-6 py-4">
+                  <div className="font-medium text-gray-900">{patient.name}</div>
+                  {patient.referredBy && (
+                    <div className="text-sm text-gray-500">Ref: {patient.referredBy}</div>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-gray-600">{patient.location}</td>
+                <td className="px-6 py-4 text-gray-600">{patient.phone}</td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-wrap gap-1">
+                    {patient.medicalHistory.map((condition, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700"
+                      >
+                        <History className="w-3 h-3 mr-1" />
+                        {condition}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-gray-600">
+                  {formatDate(patient.createdAt)}
+                </td>
+                <td className="px-6 py-4">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                    Active
+                  </span>
+                </td>
+                
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  return (
+    <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+      <div className="text-sm text-gray-500">
+        Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, totalPages * ITEMS_PER_PAGE)} of {totalPages * ITEMS_PER_PAGE} patients
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Previous
+        </Button>
+        {[...Array(totalPages)].map((_, index) => (
+          <Button
+            key={index + 1}
+            variant={currentPage === index + 1 ? "default" : "outline"}
+            size="sm"
+            onClick={() => onPageChange(index + 1)}
+          >
+            {index + 1}
+          </Button>
+        ))}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+const AddPatientModal = ({ onClose, onSuccess }) => {
+  const [name, setName] = useState('');
+  const [location, setLocation] = useState('');
+  const [phone, setPhone] = useState('');
+  const [medicalHistory, setMedicalHistory] = useState([]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const newPatient = { name, location, phone, medicalHistory };
+    try {
+      const response = await fetch('https://clinic-backend-f42a.onrender.com/patients', {
+        credentials: 'include',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newPatient),
+      });
+      if (!response.ok) throw new Error('Failed to add patient');
+      const data = await response.json();
+      onSuccess(data);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg p-6 w-[400px]">
+        <h2 className="text-lg font-semibold mb-4">Add Patient</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <Input
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Input
+              placeholder="Location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+            <Input
+              placeholder="Phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <Input
+              placeholder="Medical History (comma separated)"
+              value={medicalHistory.join(',')}
+              onChange={(e) => setMedicalHistory(e.target.value.split(','))}
+            />
+          </div>
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-indigo-600 text-white">
+              Add Patient
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

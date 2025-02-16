@@ -1,16 +1,26 @@
 'use client'
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import DashboardContent from "@/components/dashboardappointments";
- // Create this component
+import useAuth from '../app/middleware/authMiddleware';
 import Sidebar from "@/components/sidebar";
-import { Doctors } from '@/components/doctors';
+import  Doctors  from '@/components/doctors';
+import { useRouter } from 'next/navigation';
 import { Patients } from '@/components/patients';
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
   // State to manage the active component
   const [activeComponent, setActiveComponent] = useState('appointments');
 
-  // Function to render the active component
+  if (loading) {
+    return <div>Loading...</div>; // Prevent unnecessary redirects
+  }
   const renderActiveComponent = () => {
     switch (activeComponent) {
       case 'appointments':
