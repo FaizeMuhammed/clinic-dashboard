@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {  Bell, Plus, Check, Clock, X, CalendarDays, User } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Bell, Plus, Check, Clock, X, CalendarDays, User } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select";
 import {
   Tabs,
-  
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
@@ -44,23 +43,22 @@ import { fetchDoctors, fetchAppointments, updateAppointmentStatus } from '../app
 import AddAppointmentModal from '@/components/appointmentmodel';
 
 const DashboardContent = () => {
- const [appointments, setAppointments] = useState([]);
+   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedDoctor, setSelectedDoctor] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: 'time', direction: 'asc' });
-  const [viewMode, setViewMode] = useState('today')
+  const [viewMode, setViewMode] = useState('today');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const itemsPerPage = 25; // Updated to 25 items per page
+  const itemsPerPage = 25;
 
-   const openModal = () => setIsModalOpen(true);
-
-  // Close modal
+  const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  // Fetch doctors
   useEffect(() => {
     const fetchDoctorsData = async () => {
       try {
@@ -108,35 +106,37 @@ const DashboardContent = () => {
   };
 
   // Filter and sort appointments
-  const filteredAndSortedAppointments = appointments
-    .filter(appointment => {
-      const matchesSearch = appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          appointment.doctorName.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesDate = viewMode === 'all' ? true : 
-                         viewMode === 'today' ? appointment.date === selectedDate : 
-                         appointment.date === selectedDate;
-      
-      const matchesDoctor = selectedDoctor === 'all' ? true : 
-                           appointment.doctorId._id === selectedDoctor;
-      
-      return matchesSearch && matchesDate && matchesDoctor;
-    })
-    .sort((a, b) => {
-      if (sortConfig.key === 'time') {
-        const timeA = new Date(`2000/01/01 ${a.time}`);
-        const timeB = new Date(`2000/01/01 ${b.time}`);
-        return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
-      }
-      
-      const valueA = a[sortConfig.key];
-      const valueB = b[sortConfig.key];
-      
-      if (sortConfig.direction === 'asc') {
-        return valueA > valueB ? 1 : -1;
-      }
-      return valueA < valueB ? 1 : -1;
-    });
+  const filteredAndSortedAppointments = useMemo(() => {
+    return appointments
+      .filter(appointment => {
+        const matchesSearch = appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            appointment.doctorName.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesDate = viewMode === 'all' ? true : 
+                           viewMode === 'today' ? appointment.date === selectedDate : 
+                           appointment.date === selectedDate;
+        
+        const matchesDoctor = selectedDoctor === 'all' ? true : 
+                             appointment.doctorId._id === selectedDoctor;
+        
+        return matchesSearch && matchesDate && matchesDoctor;
+      })
+      .sort((a, b) => {
+        if (sortConfig.key === 'time') {
+          const timeA = new Date(`2000/01/01 ${a.time}`);
+          const timeB = new Date(`2000/01/01 ${b.time}`);
+          return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
+        }
+        
+        const valueA = a[sortConfig.key];
+        const valueB = b[sortConfig.key];
+        
+        if (sortConfig.direction === 'asc') {
+          return valueA > valueB ? 1 : -1;
+        }
+        return valueA < valueB ? 1 : -1;
+      });
+  }, [appointments, searchTerm, selectedDate, selectedDoctor, sortConfig, viewMode]);
 
   // Status update handler
   const handleStatusChange = async (id, newStatus) => {
@@ -152,7 +152,7 @@ const DashboardContent = () => {
     }
   };
 
-  // Calculate pagination
+  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredAndSortedAppointments.slice(indexOfFirstItem, indexOfLastItem);
@@ -227,13 +227,76 @@ const DashboardContent = () => {
   };
 
 
+  // New function to render mobile card view
+  const MobileAppointmentCard = ({ appointment }) => (
+    <div className="bg-white rounded-lg shadow p-4 mb-4">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h3 className="font-medium text-gray-900">{appointment.patientName}</h3>
+          <p className="text-sm text-gray-500">{appointment.location}</p>
+        </div>
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+          appointment.status === 'Completed' ? 'bg-green-100 text-green-800' :
+          appointment.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+          'bg-orange-100 text-orange-800'
+        }`}>
+          {appointment.status}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+        <div>
+          <p className="text-gray-500">Date</p>
+          <p>{appointment.date}</p>
+        </div>
+        <div>
+          <p className="text-gray-500">Time</p>
+          <p>{appointment.time}</p>
+        </div>
+        <div>
+          <p className="text-gray-500">Doctor</p>
+          <p>{appointment.doctorName}</p>
+        </div>
+        <div>
+          <p className="text-gray-500">Category</p>
+          <p>{appointment.category}</p>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleStatusChange(appointment._id, 'Scheduled')}
+          className={appointment.status === 'Scheduled' ? 'text-orange-600' : ''}
+        >
+          <Clock className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleStatusChange(appointment._id, 'Completed')}
+          className={appointment.status === 'Completed' ? 'text-green-600' : ''}
+        >
+          <Check className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleStatusChange(appointment._id, 'Cancelled')}
+          className={appointment.status === 'Cancelled' ? 'text-red-600' : ''}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex-1 p-4 md:p-8 bg-gray-50">
+    <div className="flex-1 p-4 md:p-8 bg-gray-50 min-h-screen">
       {isModalOpen && <AddAppointmentModal onClose={closeModal} />}
 
-      {/* Header Section */}
+      {/* Header Section - Now more responsive */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
+        <div className="w-full md:w-auto">
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">Appointment Management</h1>
           <p className="text-sm md:text-base text-gray-600">Dashboard / Appointments</p>
         </div>
@@ -245,7 +308,7 @@ const DashboardContent = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full md:w-64"
           />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 self-end md:self-auto">
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <Bell className="h-5 w-5" />
             </Button>
@@ -256,21 +319,21 @@ const DashboardContent = () => {
         </div>
       </div>
 
-      {/* Tabs and Filters Section */}
+      {/* Filters Section - More compact on mobile */}
       <div className="space-y-4 mb-6">
         <Tabs defaultValue="today" onValueChange={setViewMode} className="w-full">
-          <TabsList className="w-full md:w-auto flex flex-wrap">
-            <TabsTrigger value="today" className="flex-1 md:flex-none">
+          <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex gap-2">
+            <TabsTrigger value="today" className="flex items-center justify-center">
               <Clock className="mr-2 h-4 w-4" />
               <span className="hidden md:inline">Today's Appointments</span>
               <span className="md:hidden">Today</span>
             </TabsTrigger>
-            <TabsTrigger value="date" className="flex-1 md:flex-none">
+            <TabsTrigger value="date" className="flex items-center justify-center">
               <CalendarDays className="mr-2 h-4 w-4" />
               <span className="hidden md:inline">By Date</span>
               <span className="md:hidden">Date</span>
             </TabsTrigger>
-            <TabsTrigger value="all" className="flex-1 md:flex-none">
+            <TabsTrigger value="all" className="flex items-center justify-center">
               <User className="mr-2 h-4 w-4" />
               <span className="hidden md:inline">All Appointments</span>
               <span className="md:hidden">All</span>
@@ -278,55 +341,51 @@ const DashboardContent = () => {
           </TabsList>
         </Tabs>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center w-full md:w-auto">
-            {viewMode !== 'all' && (
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full md:w-48"
-              />
-            )}
-            <Select 
-              value={selectedDoctor} 
-              onValueChange={setSelectedDoctor}
-            >
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Select Doctor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Doctors</SelectItem>
-                {doctors.map(doctor => (
-                  <SelectItem key={doctor._id} value={doctor._id}>
-                    {doctor.name} - {doctor.specialty}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select onValueChange={sortData} defaultValue="time">
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Sort by..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="time">Time</SelectItem>
-                <SelectItem value="patientName">Patient Name</SelectItem>
-                <SelectItem value="doctorName">Doctor Name</SelectItem>
-                <SelectItem value="category">Category</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {viewMode !== 'all' && (
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full"
+            />
+          )}
+          <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Doctor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Doctors</SelectItem>
+              {doctors.map(doctor => (
+                <SelectItem key={doctor._id} value={doctor._id}>
+                  {doctor.name} - {doctor.specialty}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select onValueChange={sortData} defaultValue="time">
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sort by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="time">Time</SelectItem>
+              <SelectItem value="patientName">Patient Name</SelectItem>
+              <SelectItem value="doctorName">Doctor Name</SelectItem>
+              <SelectItem value="category">Category</SelectItem>
+            </SelectContent>
+          </Select>
           <Button 
-            className="bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto"
+            className="bg-indigo-600 hover:bg-indigo-700 w-full"
             onClick={openModal}
           >
-            <Plus className="mr-2 h-4 w-4" /> <span className="hidden md:inline">Add Appointment</span>
-            <span className="md:hidden">Add</span>
+            <Plus className="mr-2 h-4 w-4" />
+            <span className="hidden md:inline">Add Appointment</span>
+            <span className="md:hidden">Add Appointment</span>
           </Button>
         </div>
       </div>
 
-      {/* Table Section */}
+      {/* Content Section - Responsive table/card switch */}
       <Card>
         <CardHeader>
           <CardTitle>
@@ -336,8 +395,9 @@ const DashboardContent = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative overflow-x-auto" style={{ height: '350px' }}>
-            <Table className="min-w-[800px] md:min-w-full">
+          {/* Desktop Table View */}
+          <div className="hidden md:block relative overflow-x-auto" style={{ maxHeight: '350px' }}>
+            <Table>
               <TableHeader className="sticky top-0 bg-white z-10">
                 <TableRow>
                   <TableHead>Patient Name</TableHead>
@@ -409,6 +469,23 @@ const DashboardContent = () => {
               </TableBody>
             </Table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden">
+            {loading ? (
+              <div className="text-center py-4">Loading...</div>
+            ) : currentItems.length === 0 ? (
+              <div className="text-center py-4">No appointments found</div>
+            ) : (
+              <div className="space-y-4">
+                {currentItems.map((appointment) => (
+                  <MobileAppointmentCard key={appointment._id} appointment={appointment} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Pagination Section */}
           <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-4">
             <div className="text-sm text-gray-500 w-full md:w-auto text-center md:text-left">
               Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredAndSortedAppointments.length)} of {filteredAndSortedAppointments.length} appointments

@@ -4,7 +4,10 @@ const API_BASE_URL = 'https://clinic-backend-f42a.onrender.com';
 
 export const fetchDoctors = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/doctors`);
+    const response = await fetch(`${API_BASE_URL}/doctors`,{
+        method:'GET',
+        credentials:'include'
+    });
     if (!response.ok) throw new Error('Failed to fetch doctors');
     return await response.json();
   } catch (error) {
@@ -16,6 +19,7 @@ export const fetchDoctors = async () => {
 export const fetchAppointments = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/appointments`,{
+        method:'GET',
         credentials: 'include'
   });
     if (!response.ok) throw new Error('Failed to fetch appointments');

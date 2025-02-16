@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await API.post('/auth/login', formData);
       console.log('Login Response:', res.data);
-      setUser(res.data);
+     setUser(res.data);
       router.push('/'); // Redirect after login
     } catch (error) {
       console.error('Login failed:', error);
