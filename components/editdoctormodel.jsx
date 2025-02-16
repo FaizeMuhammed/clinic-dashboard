@@ -42,7 +42,7 @@ const EditDoctorModal = ({ doctorId, onClose, onSave, onDelete,onClick }) => {
 
   const fetchDoctorDetails = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/doctors/${doctorId}`,{
+      const response = await fetch(`https://clinic-backend-f42a.onrender.com/${doctorId}`,{
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch doctor details');
