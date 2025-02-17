@@ -42,7 +42,7 @@ const EditDoctorModal = ({ doctorId, onClose, onSave, onDelete,onClick }) => {
 
   const fetchDoctorDetails = async () => {
     try {
-      const response = await fetch(`https://clinic-backend-f42a.onrender.com/${doctorId}`,{
+      const response = await fetch(`https://clinic-backend-f42a.onrender.com/doctors/${doctorId}`,{
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch doctor details');
@@ -96,7 +96,7 @@ const EditDoctorModal = ({ doctorId, onClose, onSave, onDelete,onClick }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`https://clinic-backend-f42a.onrender.com/${doctorId}`, {
+      const response = await fetch(`https://clinic-backend-f42a.onrender.com/doctors/${doctorId}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -115,7 +115,7 @@ const EditDoctorModal = ({ doctorId, onClose, onSave, onDelete,onClick }) => {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`https://clinic-backend-f42a.onrender.com/${doctorId}`, {
+      const response = await fetch(`https://clinic-backend-f42a.onrender.com/doctors/${doctorId}`, {
         credentials: 'include',
         method: 'DELETE',
       });
