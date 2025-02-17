@@ -178,7 +178,7 @@ const Sidebar = ({activeComponent, setActiveComponent}) => {
 
           <div className="text-center flex items-center">
             <p className="text-sm font-light text-indigo-300/70 tracking-wide">
-              Powered by
+              Powered by-
               
             </p>
             <Image
