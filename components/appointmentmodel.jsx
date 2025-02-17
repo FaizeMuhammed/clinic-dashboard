@@ -14,6 +14,7 @@ const AddAppointmentModal = ({ onClose }) => {
     phone: '',
     location: '',
     referredBy: '',
+    type: 'New Patient', // Default value
   });
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -131,7 +132,8 @@ const AddAppointmentModal = ({ onClose }) => {
         ...formData,
         timezone: 'Asia/Kolkata',
         date: formData.date.date,
-        day: formData.date.day
+        day: formData.date.day,
+        type: formData.type, // Include the type field
       };
 
       const response = await fetch('https://clinic-backend-f42a.onrender.com/appointments', {
@@ -240,6 +242,21 @@ const AddAppointmentModal = ({ onClose }) => {
               Qualifications: {selectedDoctor.educationCertifications}
             </div>
           )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Appointment Type</label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+              required
+            >
+              <option value="New Patient">New Patient</option>
+              <option value="Revisit">Revisit</option>
+              <option value="Follow-up">Follow-up</option>
+            </select>
+          </div>
 
           {availableDates.length > 0 && (
             <div>

@@ -236,11 +236,11 @@ const DashboardContent = () => {
           <p className="text-sm text-gray-500">{appointment.location}</p>
         </div>
         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-          appointment.status === 'Completed' ? 'bg-green-100 text-green-800' :
-          appointment.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+          appointment.type === 'New Patient' ? 'bg-green-100 text-green-800' :
+          appointment.type === 'Revisit' ? 'bg-red-100 text-red-800' :
           'bg-orange-100 text-orange-800'
         }`}>
-          {appointment.status}
+          {appointment.type}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-2 text-sm mb-3">
@@ -429,11 +429,11 @@ const DashboardContent = () => {
                     <TableCell>{appointment.category}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        appointment.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                        appointment.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                        appointment.type === 'New Patient' ? 'bg-green-100 text-green-800' :
+                        appointment.type === 'Revisit' ? 'bg-red-100 text-red-800' :
                         'bg-orange-100 text-orange-800'
                       }`}>
-                        {appointment.status}
+                        {appointment.type}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -442,7 +442,7 @@ const DashboardContent = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleStatusChange(appointment._id, 'Scheduled')}
-                          className={appointment.status === 'Scheduled' ? 'text-orange-600' : ''}
+                          className={appointment.status === 'Scheduled' ? 'text-orange-600 bg-orange-200' : ''}
                         >
                           <Clock className="h-4 w-4" />
                         </Button>
@@ -450,7 +450,7 @@ const DashboardContent = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleStatusChange(appointment._id, 'Completed')}
-                          className={appointment.status === 'Completed' ? 'text-green-600' : ''}
+                          className={appointment.status === 'Completed' ? 'text-green-600 bg-green-200' : ''}
                         >
                           <Check className="h-4 w-4" />
                         </Button>
@@ -458,7 +458,7 @@ const DashboardContent = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleStatusChange(appointment._id, 'Cancelled')}
-                          className={appointment.status === 'Cancelled' ? 'text-red-600' : ''}
+                          className={appointment.status === 'Cancelled' ? 'text-red-600 bg-red-200' : ''}
                         >
                           <X className="h-4 w-4" />
                         </Button>

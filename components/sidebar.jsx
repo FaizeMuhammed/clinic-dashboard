@@ -1,25 +1,23 @@
 'use client';
 
-import React, { useState,useContext } from 'react';
-
+import React, { useState, useContext } from 'react';
 import Image from 'next/image';
-import { Calendar, Users, UserRound, LogOut, Menu, X } from 'lucide-react';
+import { Calendar, Users, UserRound, LogOut, Menu, X, BarChart } from 'lucide-react';
 import { AuthContext } from '../app/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 const Sidebar = ({activeComponent, setActiveComponent}) => {
-  const {  logout } = useContext(AuthContext);
+  const { logout } = useContext(AuthContext);
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-if(activeComponent){
-  console.log('.');
-  
-}
+  if(activeComponent){
+    console.log('.');
+  }
 
   const handleLogout = async () => {
-    await logout(); // Calls the logout function
-    router.push('/login'); // Redirect after logout
+    await logout();
+    router.push('/login');
   };
 
   const NavItems = () => (
@@ -63,6 +61,20 @@ if(activeComponent){
           <Users className="group-hover:text-indigo-300 transition-colors w-5 h-5" />
           <span className="group-hover:text-indigo-300 transition-colors font-medium">
             Patients
+          </span>
+        </button>
+      </li>
+      <li>
+        <button 
+          onClick={() => {
+            setActiveComponent('analytics');
+            setIsMobileMenuOpen(false);
+          }}
+          className="flex items-center space-x-4 px-4 py-3 rounded-xl hover:bg-white/10 transition-all duration-300 backdrop-blur-sm group w-full"
+        >
+          <BarChart className="group-hover:text-indigo-300 transition-colors w-5 h-5" />
+          <span className="group-hover:text-indigo-300 transition-colors font-medium">
+            Analytics
           </span>
         </button>
       </li>
@@ -164,13 +176,23 @@ if(activeComponent){
             </span>
           </button>
 
-          <div className="text-center">
+          <div className="text-center flex items-center">
             <p className="text-sm font-light text-indigo-300/70 tracking-wide">
               Powered by
-              <span className="font-medium text-indigo-300 ml-1">
-                Brandname
-              </span>
+              
             </p>
+            <Image
+                src="/Screenshot_2025-02-18_000947-removebg-preview.png"
+                alt="Brandname"
+                width={80}
+                height={40}
+                style={{
+                  maxWidth: "85%",
+                  height: "auto",
+                  objectFit: "contain"
+                }}
+                className="drop-shadow-lg"
+              />
           </div>
         </div>
       </div>
