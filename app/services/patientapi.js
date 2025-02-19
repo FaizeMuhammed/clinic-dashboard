@@ -1,6 +1,6 @@
 // service/patientapi.js
 
-const API_BASE_URL = 'https://clinic-backend-f42a.onrender.com/patients';
+const API_BASE_URL = 'http://localhost:5000/patients';
 
 export const fetchPatients = async () => {
   try {

@@ -8,12 +8,16 @@ import { Calendar as CalendarIcon, Users, RotateCw } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { FileText } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import DailyReport from './dailyreport';
 
 export const Docanalytics = () => {
   const [analyticsData, setAnalyticsData] = useState([]);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -100,8 +104,18 @@ export const Docanalytics = () => {
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
           Daily Analytics
         </h2>
-        <Popover>
-          <PopoverTrigger asChild>
+        <div className="flex items-center gap-2">
+  <Button
+    variant="outline"
+    size="sm"
+    className="gap-2"
+    onClick={() => setIsReportOpen(true)}
+  >
+    <FileText className="h-4 w-4" />
+    Daily Report
+  </Button>
+  <Popover>
+  <PopoverTrigger asChild>
             <button className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900">
               <CalendarIcon className="h-4 w-4" />
               {format(date, "MMMM d, yyyy")}
@@ -115,7 +129,9 @@ export const Docanalytics = () => {
               initialFocus
             />
           </PopoverContent>
-        </Popover>
+  </Popover>
+</div>
+        
       </div>
 
       {/* Summary Cards */}
@@ -233,6 +249,12 @@ export const Docanalytics = () => {
           ))}
         </div>
       </ScrollArea>
+      <DailyReport
+  isOpen={isReportOpen}
+  onClose={() => setIsReportOpen(false)}
+  currentDate={date}
+  analyticsData={analyticsData}
+/>
     </div>
   );
 };
